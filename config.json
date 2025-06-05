@@ -1,0 +1,15 @@
+{
+    "mqtt": {
+        "broker": "158.180.44.197",
+        "port": 1883,
+        "username": "bobm",
+        "password": "letmein",
+        "topic": "iot1/teaching_factory/#"
+    },
+    "storage": {
+        "csv_path": "../database/data.csv"
+    },
+    "visualisierung": {
+        "plot_column": "fill_level_grams_red"
+    }
+}
