@@ -4,48 +4,94 @@ import csv
 import os
 from datetime import datetime
 import sys
-import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from config import load_config
-
+from database.transform import transform_data
 
 config = load_config()
-
 broker = config["mqtt"]["broker"]
 port = config["mqtt"]["port"]
 topic = config["mqtt"]["topic"]
 username = config["mqtt"]["username"]
 password = config["mqtt"]["password"]
-
-# Nutze csv_path aus storage, nicht mqtt
 csv_path = config["storage"]["csv_path"]
-
-# === CSV Setup ===
-# Absoluter Pfad zur CSV-Datei
 CSV_FILE = os.path.join(os.path.dirname(__file__), csv_path)
-FIELDNAMES = ["timestamp", "topic", "value"]
 
-def write_csv(timestamp, topic, value):
+# Bestehende Daten lesen
+with open('database/data.csv', 'r') as file:
+    existing_data = file.read()
+
+# Neue Datei mit Header schreiben
+FIELDNAMES = [
+    "bottle",
+    "vibration_index_red", "fill_level_grams_red", 
+    "vibration_index_blue", "fill_level_grams_blue",
+    "vibration_index_green", "fill_level_grams_green",
+    "temperature_green", "temperature_red", "temperature_blue",
+    "final_weight"
+]
+
+with open('database/data.csv', 'w', newline='') as file:
+    writer = csv.writer(file)
+    writer.writerow(FIELDNAMES)  # Header schreiben
+    file.write(existing_data)    # Bestehende Daten anhängen
+
+# Sammle Daten pro bottle
+bottle_data = {}
+last_bottle_per_color = {"red": None, "blue": None, "green": None}
+
+def write_csv(row):
     file_exists = os.path.isfile(CSV_FILE)
     with open(CSV_FILE, mode="a", newline="") as csvfile:
         writer = csv.DictWriter(csvfile, fieldnames=FIELDNAMES)
         if not file_exists:
-            writer.writeheader()
-        writer.writerow({"timestamp": timestamp, "topic": topic, "value": value})
+            writer.writeheader()  # Schreibt automatisch die Titelzeile
+        writer.writerow(row)
 
-# === MQTT Setup ===
 def on_connect(client, userdata, flags, rc, properties=None):
     print("Verbunden mit Code:", rc)
-    client.subscribe(topic)  # Topic aus config
+    client.subscribe(topic)
 
 def on_message(client, userdata, msg):
     timestamp = datetime.utcnow().isoformat()
-    try:
-        payload = msg.payload.decode()
-        write_csv(timestamp, msg.topic, payload)
-        print(f"[{timestamp}] {msg.topic}: {payload}")
-    except Exception as e:
-        print("Fehler beim Verarbeiten der Nachricht:", e)
+    bottle, values = transform_data(timestamp, msg.topic, msg.payload.decode())
+    print(f"Empfangen: topic={msg.topic}, bottle={bottle}, values={values}")
+
+    # Spezialbehandlung für Temperature ohne bottle-ID
+    if "temperature" in msg.topic and (not bottle or bottle == ""):
+        # Bestimme Farbe und verwende die zuletzt aktive Flasche dieser Farbe
+        if "temperature_red" in values and last_bottle_per_color["red"]:
+            bottle = last_bottle_per_color["red"]
+            values["bottle"] = bottle
+        elif "temperature_blue" in values and last_bottle_per_color["blue"]:
+            bottle = last_bottle_per_color["blue"]
+            values["bottle"] = bottle
+        elif "temperature_green" in values and last_bottle_per_color["green"]:
+            bottle = last_bottle_per_color["green"]
+            values["bottle"] = bottle
+
+    if not bottle or not values:
+        print("Kein bottle oder keine Werte extrahiert!")
+        return
+
+    # Merke dir die letzte Flasche pro Farbe
+    if "fill_level_grams_red" in values:
+        last_bottle_per_color["red"] = bottle
+    elif "fill_level_grams_blue" in values:
+        last_bottle_per_color["blue"] = bottle
+    elif "fill_level_grams_green" in values:
+        last_bottle_per_color["green"] = bottle
+
+    if bottle not in bottle_data:
+        bottle_data[bottle] = {"bottle": bottle}
+    bottle_data[bottle].update(values)
+    print(f"Aktueller Stand für bottle {bottle}: {bottle_data[bottle]}")
+
+    required = set(FIELDNAMES) - {"bottle"}
+    if required.issubset(bottle_data[bottle].keys()):
+        write_csv(bottle_data[bottle])
+        print(f"Datensatz geschrieben: {bottle_data[bottle]}")
+        del bottle_data[bottle]
 
 client = mqtt.Client()
 client.username_pw_set(username, password)
