@@ -7,6 +7,7 @@ import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from config import load_config
 from database.transform import transform_data
+from database.save_drop_oscillation import save_drop_oscillation
 
 config = load_config()
 broker = config["mqtt"]["broker"]
@@ -53,6 +54,22 @@ def on_connect(client, userdata, flags, rc, properties=None):
     client.subscribe(topic)
 
 def on_message(client, userdata, msg):
+    # --- Drop-Oscillation: Direkt speichern, keine transform_data! ---
+    if msg.topic.endswith("drop_oscillation"):
+        try:
+            data = json.loads(msg.payload.decode())
+            bottle = data.get("bottle")
+            drop_osc = data.get("drop_oscillation")
+            if bottle and drop_osc:
+                save_drop_oscillation(bottle, drop_osc)  # Übergib Liste, nicht String!
+                print(f"Drop-Oscillation gespeichert für bottle {bottle}")
+            else:
+                print("Drop-Oscillation: bottle oder drop_oscillation fehlt!")
+        except Exception as e:
+            print(f"Fehler beim Speichern von drop_oscillation: {e}")
+        return  # Danach keine weitere Verarbeitung!
+
+    # --- Normale Verarbeitung für alle anderen Topics ---
     timestamp = datetime.utcnow().isoformat()
     bottle, values = transform_data(timestamp, msg.topic, msg.payload.decode())
     print(f"Empfangen: topic={msg.topic}, bottle={bottle}, values={values}")

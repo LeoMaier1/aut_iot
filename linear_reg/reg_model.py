@@ -75,7 +75,7 @@ predictions_df = pd.DataFrame({
     'Flaschen_ID': X_pred_df['bottle'],
     'y_hat': final_predictions
 })
-output_path = os.path.join(os.path.dirname(__file__), 'reg_student1-student2-student3.csv')
+output_path = os.path.join(os.path.dirname(__file__), 'reg_52315857-52310501.csv')
 predictions_df.to_csv(output_path, index=False)
 print(f"\nPredictions saved to: {output_path}")
 
