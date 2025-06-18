@@ -5,73 +5,52 @@ from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error
 import os
 
-# Load training data (equivalent to sns.load_dataset('iris'))
+# 1. Daten laden
 data_path = os.path.join(os.path.dirname(__file__), '..', 'database', 'data.csv')
 df = pd.read_csv(data_path)
 print("Training data loaded:")
+print(f"Shape: {df.shape}")
 print(df.head())
 
-# Prepare features and target (equivalent to iris example)
-y = df['final_weight']  # Target variable
-X = df.drop(['bottle', 'final_weight'], axis=1)  # Features (remove ID and target)
+# 2. Features und Zielvariable definieren
+y = df['final_weight']
+X = df.drop(['bottle', 'final_weight'], axis=1)
 print("\nFeatures shape:", X.shape)
 print("Target shape:", y.shape)
+print("Features:", list(X.columns))
 
-# Split data
+# 3. Train-Test Split
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
 print("\nTraining features shape:", X_train.shape)
 print("Test features shape:", X_test.shape)
 
-# Create and train model
+# 4. Modell erstellen und trainieren
 model = LinearRegression()
 model.fit(X_train, y_train)
+print("\nModell erfolgreich trainiert!")
+print(f"Intercept (β₀): {model.intercept_:.4f}")
 
-# Show model coefficients
+# 5. Modellkoeffizienten anzeigen
 print("\nModel coefficients:")
 for feature, coef in zip(X.columns, model.coef_):
     print(f"{feature}: {coef:.4f}")
-print(f"Intercept: {model.intercept_:.4f}")
 
-# Make predictions on training data
+# 6. Modell evaluieren
 y_train_pred = model.predict(X_train)
 y_test_pred = model.predict(X_test)
-
-# Calculate performance
 mse_train = mean_squared_error(y_train, y_train_pred)
 mse_test = mean_squared_error(y_test, y_test_pred)
-
 print(f"\nModel Performance:")
 print(f"Training MSE: {mse_train:.4f}")
 print(f"Test MSE: {mse_test:.4f}")
 
-# Load prediction data (X.csv)
-pred_path = os.path.join(os.path.dirname(__file__), '..', 'X.csv')
-X_pred_df = pd.read_csv(pred_path)
-print(f"\nPrediction data loaded. Shape: {X_pred_df.shape}")
-
-# Prepare prediction features (same columns as training)
-X_pred = X_pred_df.drop(['bottle'], axis=1)  # Remove bottle ID
-X_pred = X_pred.fillna(X_pred.mean())  # Handle missing values
-
-# Make final predictions
-final_predictions = model.predict(X_pred)
-print(f"\nFirst 5 predictions: {final_predictions[:5]}")
-
-# Save predictions in required format
-predictions_df = pd.DataFrame({
-    'Flaschen_ID': X_pred_df['bottle'],
-    'y_hat': final_predictions
-})
-
-# Save to CSV
-output_path = os.path.join(os.path.dirname(__file__), 'reg_student1-student2-student3.csv')
-predictions_df.to_csv(output_path, index=False)
-
-print(f"\n=== RESULTS TABLE ===")
+# 7. Ergebnistabelle für Report
+print("\n=== RESULTS TABLE ===")
 print("| Genutzte Spalten | Modell-Typ | MSE-Wert (Training) | MSE-Wert (Test) |")
 print("|------------------|------------|---------------------|-----------------|")
 print(f"| All features | Linear | {mse_train:.4f} | {mse_test:.4f} |")
 
+# 8. Modellformel (y = mx + b Form)
 print(f"\n=== MODEL FORMULA ===")
 formula = f"final_weight = {model.intercept_:.4f}"
 for feature, coef in zip(X.columns, model.coef_):
@@ -81,10 +60,26 @@ for feature, coef in zip(X.columns, model.coef_):
         formula += f" - {abs(coef):.4f} * {feature}"
 print(formula)
 
+# 9. Vorhersagen für X.csv
+pred_path = os.path.join(os.path.dirname(__file__), '..', 'X.csv')
+X_pred_df = pd.read_csv(pred_path)
+print(f"\nPrediction data loaded. Shape: {X_pred_df.shape}")
+X_pred = X_pred_df.drop(['bottle'], axis=1)
+X_pred = X_pred.fillna(X_pred.mean())
+final_predictions = model.predict(X_pred)
+print(f"First 5 predictions: {final_predictions[:5]}")
+print(f"Total predictions made: {len(final_predictions)}")
+
+# 10. Vorhersagen speichern
+predictions_df = pd.DataFrame({
+    'Flaschen_ID': X_pred_df['bottle'],
+    'y_hat': final_predictions
+})
+output_path = os.path.join(os.path.dirname(__file__), 'reg_student1-student2-student3.csv')
+predictions_df.to_csv(output_path, index=False)
 print(f"\nPredictions saved to: {output_path}")
-print(f"Total predictions made: {len(predictions_df)}")
 
 # Show sample predictions in required format
-print(f"\nSample predictions (Flaschen_ID, y_hat):")
+print("\nSample predictions (Flaschen_ID, y_hat):")
 for i in range(min(5, len(predictions_df))):
     print(f"{predictions_df.iloc[i]['Flaschen_ID']}, {predictions_df.iloc[i]['y_hat']:.1f}")
