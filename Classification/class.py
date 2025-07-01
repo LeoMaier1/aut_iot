@@ -12,8 +12,9 @@ from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.tree import DecisionTreeClassifier
-from sklearn.metrics import f1_score, confusion_matrix, classification_report
+from sklearn.metrics import f1_score, confusion_matrix, ConfusionMatrixDisplay, classification_report
 from scipy.stats import skew, kurtosis
+import matplotlib.pyplot as plt
 
 
 def extract_features(signal):
@@ -106,10 +107,18 @@ def main():
     best_model.fit(X_train, y_train)
     y_pred_best = best_model.predict(X_test)
     cm = confusion_matrix(y_test, y_pred_best)
-    print("\nConfusion Matrix (Decision Tree) on Test Set:")
-    print(cm)
-    print("\nClassification Report:")
-    print(classification_report(y_test, y_pred_best))
+    disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=["ok", "defekt"])
+    disp.plot()
+    plt.title("Confusion Matrix (Decision Tree, alle Features)")
+    plt.show()
+    print("\nClassification Report (Test):")
+    print(classification_report(y_test, y_pred_best, target_names=["ok", "defekt"]))
+
+    # Verteilung der Zielvariable in den Features
+    print("Verteilung aller Daten:")
+    print(feat_df['defective'].value_counts())
+    print("Train:", y_train.value_counts())
+    print("Test :", y_test.value_counts())
 
 
 if __name__ == '__main__':

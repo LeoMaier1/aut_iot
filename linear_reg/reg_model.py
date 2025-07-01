@@ -19,6 +19,19 @@ print("\nFeatures shape:", X.shape)
 print("Target shape:", y.shape)
 print("Features:", list(X.columns))
 
+# Check for non-numeric values in features
+for col in X.columns:
+    if X[col].dtype == object:
+        print(f"Nicht-numerische Werte in Spalte {col}:")
+        print(X[X[col].apply(lambda x: isinstance(x, str))])
+
+# Versuche alle Spalten numerisch zu machen, entferne Zeilen mit Fehlern
+X = X.apply(pd.to_numeric, errors='coerce')
+y = pd.to_numeric(y, errors='coerce')
+mask = ~(X.isnull().any(axis=1) | y.isnull())
+X = X[mask]
+y = y[mask]
+
 # 3. Train-Test Split
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
 print("\nTraining features shape:", X_train.shape)
