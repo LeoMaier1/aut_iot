@@ -80,6 +80,7 @@ python class.py
 - Klassifiziert defekte Flaschen basierend auf Vibrationsdaten
 - Nutzt verschiedene ML-Algorithmen (Logistic Regression, k-NN, Decision Tree)
 - Extrahiert Zeit- und Frequenzfeatures aus Vibrationssignalen
+- **Hinweis**: Die Klassifikation konnte nicht vollständig getestet werden, da keine neuen Daten mehr geloggt werden können und alle vorhandenen Flaschen in den Daten als "nicht defekt" klassifiziert sind
 
 ### 4. Datenvisualisierung
 ```bash
