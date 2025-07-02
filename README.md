@@ -47,7 +47,7 @@ Bearbeiten Sie `config.json` für Ihre MQTT-Einstellungen:
         "broker": "158.180.44.197",
         "port": 1883,
         "username": "bobm",
-        "password": "letmein",
+        "password": "*******",
         "topic": "iot1/teaching_factory/#"
     }
 }
