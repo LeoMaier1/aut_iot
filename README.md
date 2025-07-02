@@ -129,5 +129,5 @@ Erstellt Zeitreihen-Plots der Sensordaten (z.B. Füllstand, Temperatur).
 ## Ergebnisse
 
 - **Regression**: MSE ≈ 0 bei Vollfeatures, MSE ≈ 40 bei reduzierten Features
-- **Klassifikation**: F1-Scores variieren je nach Algorithmus und Features
+- **Klassifikation**: Konnten nicht testen
 - **Visualisierung**: Zeitreihen zeigen Produktionsmuster und Anomalien
